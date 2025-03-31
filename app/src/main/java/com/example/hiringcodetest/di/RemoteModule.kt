@@ -39,7 +39,7 @@ object RemoteModule {
     @Provides
     fun injectRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(WebConstants.hiringUrl)
+            .baseUrl(WebConstants.HIRING_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

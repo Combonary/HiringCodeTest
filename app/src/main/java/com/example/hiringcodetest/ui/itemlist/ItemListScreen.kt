@@ -47,17 +47,11 @@ fun ItemListScreen(
     onBackClicked: () -> Unit
 ) {
 
-    val items by remember {
-        viewModel.itemList
-    }
-    val apiStatus by remember {
-        viewModel.apiStatus
-    }
+    val uiState = viewModel.uiState.value
 
     ItemListScreenContent(
         onBackClicked = onBackClicked,
-        apiStatus = apiStatus,
-        itemList = items
+        uiState = uiState
     )
 }
 
@@ -65,34 +59,8 @@ fun ItemListScreen(
 @Composable
 fun ItemListScreenContent(
     onBackClicked: () -> Unit = {},
-    apiStatus: ServerResult.Status? = null,
-    itemList: List<Item> = listOf()
+    uiState: UIState,
 ) {
-    var loading by remember {
-        mutableStateOf(false)
-    }
-
-    var showError by remember {
-        mutableStateOf(false)
-    }
-
-    when (apiStatus) {
-        ServerResult.Status.SUCCESS -> {
-            loading = false
-        }
-
-        ServerResult.Status.ERROR -> {
-            loading = false
-            showError = true
-        }
-
-        ServerResult.Status.LOADING -> {
-            loading = true
-        }
-
-        null -> {}
-    }
-
     HiringCodeTestTheme {
         Scaffold(
             topBar = {
@@ -116,29 +84,34 @@ fun ItemListScreenContent(
                     .fillMaxSize()
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .align(Alignment.Center)
-                                .align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.secondary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                    if (showError) {
-                        Text(
-                            modifier = Modifier.align(Alignment.Center),
-                            text = "Error Loading Items",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    } else {
-                        LazyColumn(Modifier.fillMaxSize()) {
-                            items(itemList) { item ->
-                                item.name?.let { ListItem(it) }
-                                HorizontalDivider(color = Color.Cyan)
+                    when (uiState) {
+                        is UIState.Success -> {
+                            LazyColumn(Modifier.fillMaxSize()) {
+                                items(uiState.items) { item ->
+                                    item.name?.let { ListItem(it) }
+                                    HorizontalDivider(color = Color.Cyan)
+                                }
                             }
+                        }
+
+                        UIState.Error -> {
+                            Text(
+                                modifier = Modifier.align(Alignment.Center),
+                                text = "Error Loading Items",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        UIState.Loading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .width(64.dp)
+                                    .align(Alignment.Center)
+                                    .align(Alignment.Center),
+                                color = MaterialTheme.colorScheme.secondary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         }
                     }
                 }
@@ -176,7 +149,6 @@ fun ItemListScreenPreview() {
     )
     ItemListScreenContent(
         {},
-        null,
-        sampleList
+        UIState.Success(sampleList)
     )
 }

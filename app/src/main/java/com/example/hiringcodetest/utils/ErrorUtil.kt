@@ -10,7 +10,9 @@ object ErrorUtil {
         val parser =
             retrofit.responseBodyConverter<ErrorResponse>(ErrorResponse::class.java, arrayOfNulls(0))
         return try {
-            return parser.convert(response.errorBody()!!)
+            return response.errorBody()?.let { errorBody ->
+                parser.convert(errorBody)
+            }
         } catch (e: IOException) {
             ErrorResponse()
         }

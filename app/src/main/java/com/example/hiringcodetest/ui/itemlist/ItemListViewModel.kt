@@ -17,12 +17,7 @@ class ItemListViewModel @Inject constructor(
     private val itemListUseCase: GetItemListUseCase
 ) : ViewModel() {
 
-    private val _itemList = mutableStateOf(listOf<Item>())
-    val itemList: MutableState<List<Item>>
-        get() = _itemList
-    private var _apiStatus: MutableState<ServerResult.Status?> =
-        mutableStateOf(ServerResult.Status.LOADING)
-    var apiStatus: State<ServerResult.Status?> = _apiStatus
+    val uiState: MutableState<UIState> = mutableStateOf(UIState.Loading)
 
     init {
         viewModelScope.launch {
@@ -32,8 +27,11 @@ class ItemListViewModel @Inject constructor(
 
     private suspend fun getItems() {
         itemListUseCase.invoke().collect { serverData ->
-            _apiStatus.value = serverData.status
-            _itemList.value = getSortedItems(serverData.data)
+            if (serverData.status == ServerResult.Status.ERROR) {
+                uiState.value = UIState.Error
+            } else if (serverData.status == ServerResult.Status.SUCCESS) {
+                uiState.value = UIState.Success(getSortedItems(serverData.data))
+            }
         }
     }
 
@@ -41,4 +39,11 @@ class ItemListViewModel @Inject constructor(
         return items?.sortedWith(compareBy<Item> { it.listId }.thenBy { it.name })
             ?.filter { !it.name.isNullOrBlank() } ?: emptyList()
     }
+
+}
+
+sealed interface UIState {
+    data object Loading: UIState
+    data object Error: UIState
+    data class Success(val items: List<Item>): UIState
 }
